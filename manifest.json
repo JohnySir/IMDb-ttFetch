@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IMDb ttFetch",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "Fetch and copy IMDb IDs (tt…) and title metadata with one click, a keyboard shortcut, or the context menu.",
   "permissions": ["storage", "contextMenus", "clipboardWrite", "commands"],
   "host_permissions": ["https://www.imdb.com/*", "http://www.imdb.com/*"],

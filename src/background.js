@@ -13,6 +13,13 @@ var DEFAULTS = {
   titleFormat: 'title-year',
   showFloatingButton: true,
   showTitleButton: true,
+  showParentsGuideButton: true,
+  showSneakPeekButton: true,
+  peekCatNudity: true,
+  peekCatViolence: true,
+  peekCatProfanity: true,
+  peekCatAlcohol: true,
+  peekCatFrightening: true,
   menuEnabled: true,
   toastDurationMs: 1400,
   historySize: 10
@@ -181,7 +188,9 @@ chrome.commands.onCommand.addListener(function (command) {
   });
 });
 
-/* ---------------------------------------------------------------- COPIED ingestion */
+var pgCache = {};
+
+/* ---------------------------------------------------------------- message listener */
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (!msg || typeof msg !== 'object') return;
@@ -195,6 +204,31 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     };
     if (entry.id) pushHistory(entry);
     if (typeof sendResponse === 'function') sendResponse({ received: true });
+    return undefined;
+  }
+  if (msg.cmd === 'FETCH_PARENTS_GUIDE') {
+    var rawId = msg.id;
+    if (!rawId) {
+      if (typeof sendResponse === 'function') sendResponse({ ok: false, error: 'No ID provided' });
+      return undefined;
+    }
+    if (pgCache[rawId]) {
+      if (typeof sendResponse === 'function') sendResponse({ ok: true, categories: pgCache[rawId], cached: true });
+      return undefined;
+    }
+    fetch('https://www.imdb.com/title/' + rawId + '/parentalguide/', {
+      headers: { 'Accept': 'text/html' }
+    })
+      .then(function (res) { return res.text(); })
+      .then(function (html) {
+        var ratings = Lib && Lib.extractParentsGuideRatings ? Lib.extractParentsGuideRatings(html) : [];
+        pgCache[rawId] = ratings;
+        if (typeof sendResponse === 'function') sendResponse({ ok: true, categories: ratings });
+      })
+      .catch(function (err) {
+        if (typeof sendResponse === 'function') sendResponse({ ok: false, error: err.message || 'Fetch failed' });
+      });
+    return true; // async
   }
   return undefined;
 });

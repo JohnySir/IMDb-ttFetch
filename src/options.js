@@ -9,6 +9,13 @@
     titleFormat: 'title-year',
     showFloatingButton: true,
     showTitleButton: true,
+    showParentsGuideButton: true,
+    showSneakPeekButton: true,
+    peekCatNudity: true,
+    peekCatViolence: true,
+    peekCatProfanity: true,
+    peekCatAlcohol: true,
+    peekCatFrightening: true,
     menuEnabled: true,
     toastDurationMs: 1400,
     historySize: 10
@@ -27,6 +34,13 @@
       $('title-format').value = items.titleFormat === 'title' ? 'title' : 'title-year';
       $('show-floating').checked = !!items.showFloatingButton;
       $('show-title').checked = items.showTitleButton !== false;
+      $('show-parents-guide').checked = items.showParentsGuideButton !== false;
+      $('show-sneak-peek').checked = items.showSneakPeekButton !== false;
+      $('peek-cat-nudity').checked = items.peekCatNudity !== false;
+      $('peek-cat-violence').checked = items.peekCatViolence !== false;
+      $('peek-cat-profanity').checked = items.peekCatProfanity !== false;
+      $('peek-cat-alcohol').checked = items.peekCatAlcohol !== false;
+      $('peek-cat-frightening').checked = items.peekCatFrightening !== false;
       $('menu-enabled').checked = !!items.menuEnabled;
       $('toast-ms').value = items.toastDurationMs;
       $('history-size').value = items.historySize;
@@ -66,6 +80,13 @@
       titleFormat: $('title-format').value,
       showFloatingButton: $('show-floating').checked,
       showTitleButton: $('show-title').checked,
+      showParentsGuideButton: $('show-parents-guide').checked,
+      showSneakPeekButton: $('show-sneak-peek').checked,
+      peekCatNudity: $('peek-cat-nudity').checked,
+      peekCatViolence: $('peek-cat-violence').checked,
+      peekCatProfanity: $('peek-cat-profanity').checked,
+      peekCatAlcohol: $('peek-cat-alcohol').checked,
+      peekCatFrightening: $('peek-cat-frightening').checked,
       menuEnabled: $('menu-enabled').checked,
       toastDurationMs: isNaN(toast) ? DEFAULTS.toastDurationMs : toast,
       historySize: isNaN(hist) ? DEFAULTS.historySize : hist

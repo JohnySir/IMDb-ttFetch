@@ -474,6 +474,275 @@
     return parts.join(' ');
   }
 
+  /**
+   * Detect whether the Parents Guide / Content Advisory is present on the page.
+   * Returns: true (available) or false (missing / "Add content advisory").
+   */
+  function detectParentsGuide(doc) {
+    doc = doc || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return true;
+
+    // 1) Explicit check for "Add content advisory" in links, buttons, and story elements
+    if (doc.querySelectorAll) {
+      var links = doc.querySelectorAll('a[href*="parentalguide"], a[href*="advisories"], [data-testid*="advisory"], [data-testid*="parents-guide"], [data-testid*="content-rating"]');
+      for (var i = 0; i < links.length; i++) {
+        var text = (links[i].textContent || '').trim().toLowerCase();
+        if (text.indexOf('add content advisory') > -1 || text.indexOf('be the first to add') > -1 || text.indexOf('add to guide') > -1) {
+          return false;
+        }
+      }
+
+      // Check if advisory sections exist with populated severity categories
+      var advisorySection = doc.querySelector('[data-testid="storyline-parents-guide"], [data-testid="storyline-advisory"], [data-testid="title-advisory"]');
+      if (advisorySection) {
+        var advText = (advisorySection.textContent || '').trim().toLowerCase();
+        if (advText.indexOf('add content advisory') > -1 || advText.indexOf('be the first to add') > -1) {
+          return false;
+        }
+        if (/\b(nudity|violence|profanity|alcohol|drugs|smoking|frightening|severe|moderate|mild|none)\b/i.test(advText)) {
+          return true;
+        }
+      }
+    }
+
+    // 2) Check __NEXT_DATA__
+    var nextData = doc.getElementById && doc.getElementById('__NEXT_DATA__');
+    if (nextData && nextData.textContent) {
+      try {
+        var parsed = JSON.parse(nextData.textContent);
+        if (parsed && parsed.props && parsed.props.pageProps) {
+          var pp = parsed.props.pageProps;
+          var main = pp.mainColumnData || pp.aboveTheFoldData || pp.aboveTheFold;
+          if (main) {
+            var pg = main.parentsGuide || main.parentalGuide || main.advisories;
+            if (pg) {
+              if (Array.isArray(pg.categories)) {
+                if (pg.categories.length === 0 && (!pg.certificates || !pg.certificates.length) && pg.totalCount === 0) {
+                  return false;
+                }
+                if (pg.categories.length > 0) return true;
+              }
+              if (typeof pg.totalCount === 'number') {
+                return pg.totalCount > 0;
+              }
+              if (typeof pg.total === 'number') {
+                return pg.total > 0;
+              }
+            }
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // 3) Check document body text
+    if (doc.body && doc.body.textContent) {
+      var body = doc.body.textContent;
+      if (body.indexOf('Add content advisory') > -1 && body.indexOf('Parents Guide') === -1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  var CATEGORY_DEFS = [
+    {
+      key: 'nudity',
+      label: 'Sex & Nudity',
+      idMatch: /nudity|sex/i,
+      textMatch: /\b(sex\s*(?:&|and)\s*nudity|nudity)\b/i,
+      scanRe: /(?:sex\s*(?:&|and)\s*nudity|\bnudity\b)[^a-zA-Z0-9<>{}\[\]]{0,20}\s*\b(Severe|Moderate|Mild|None)\b/i
+    },
+    {
+      key: 'violence',
+      label: 'Violence & Gore',
+      idMatch: /violence|gore/i,
+      textMatch: /\b(violence\s*(?:&|and)\s*gore|violence)\b/i,
+      scanRe: /(?:violence\s*(?:&|and)\s*gore|\bviolence\b)[^a-zA-Z0-9<>{}\[\]]{0,20}\s*\b(Severe|Moderate|Mild|None)\b/i
+    },
+    {
+      key: 'profanity',
+      label: 'Profanity',
+      idMatch: /profanity|language/i,
+      textMatch: /\b(profanity|language)\b/i,
+      scanRe: /(?:profanity|\blanguage\b)[^a-zA-Z0-9<>{}\[\]]{0,20}\s*\b(Severe|Moderate|Mild|None)\b/i
+    },
+    {
+      key: 'alcohol',
+      label: 'Alcohol, Drugs & Smoking',
+      idMatch: /alcohol|drug|smoking|substance/i,
+      textMatch: /\b(alcohol.*drugs?|drugs?.*smoking|alcohol)\b/i,
+      scanRe: /(?:alcohol(?:\s*,|\s*and|\s*&)?\s*drugs?(?:\s*,|\s*and|\s*&)?\s*smoking|\balcohol\b)[^a-zA-Z0-9<>{}\[\]]{0,20}\s*\b(Severe|Moderate|Mild|None)\b/i
+    },
+    {
+      key: 'frightening',
+      label: 'Frightening & Intense Scenes',
+      idMatch: /frighten|intense/i,
+      textMatch: /\b(frightening\s*(?:&|and)\s*intense|frightening)\b/i,
+      scanRe: /(?:frightening\s*(?:&|and)\s*intense(?:\s*scenes)?|\bfrightening\b)[^a-zA-Z0-9<>{}\[\]]{0,20}\s*\b(Severe|Moderate|Mild|None)\b/i
+    }
+  ];
+
+  function normalizeSeverity(raw) {
+    if (!raw) return { severity: 'Not Rated', level: 'unknown' };
+    var s = String(raw).trim();
+    if (/\bsevere\b/i.test(s)) return { severity: 'Severe', level: 'severe' };
+    if (/\bmoderate\b/i.test(s)) return { severity: 'Moderate', level: 'moderate' };
+    if (/\bmild\b/i.test(s)) return { severity: 'Mild', level: 'mild' };
+    if (/\bnone\b/i.test(s)) return { severity: 'None', level: 'none' };
+    return { severity: s, level: 'unknown' };
+  }
+
+  function inspectNextDataItem(item, results) {
+    if (!item || typeof item !== 'object') return;
+    var idStr = '';
+    if (typeof item.id === 'string') idStr += ' ' + item.id;
+    if (typeof item.name === 'string') idStr += ' ' + item.name;
+    if (typeof item.label === 'string') idStr += ' ' + item.label;
+    if (typeof item.category === 'string') idStr += ' ' + item.category;
+    else if (item.category && typeof item.category === 'object') {
+      idStr += ' ' + (item.category.id || '') + ' ' + (item.category.text || '') + ' ' + (item.category.name || '');
+    }
+    if (typeof item.text === 'string') idStr += ' ' + item.text;
+
+    var sevStr = '';
+    if (typeof item.severity === 'string') sevStr += ' ' + item.severity;
+    else if (item.severity && typeof item.severity === 'object') {
+      sevStr += ' ' + (item.severity.text || '') + ' ' + (item.severity.id || '') + ' ' + (item.severity.value || '');
+    }
+    if (typeof item.rating === 'string') sevStr += ' ' + item.rating;
+    else if (item.rating && typeof item.rating === 'object') {
+      sevStr += ' ' + (item.rating.text || '') + ' ' + (item.rating.id || '');
+    }
+    if (typeof item.severityType === 'string') sevStr += ' ' + item.severityType;
+    else if (item.severityType && typeof item.severityType === 'object') {
+      sevStr += ' ' + (item.severityType.text || '') + ' ' + (item.severityType.id || '');
+    }
+    if (item.displayableProperty && item.displayableProperty.value) {
+      sevStr += ' ' + (item.displayableProperty.value.plainText || '');
+    }
+    if (typeof item.text === 'string' && /\b(severe|moderate|mild|none)\b/i.test(item.text)) {
+      sevStr += ' ' + item.text;
+    }
+
+    if (idStr && sevStr) {
+      CATEGORY_DEFS.forEach(function (def) {
+        if (def.idMatch.test(idStr) || def.textMatch.test(idStr)) {
+          var norm = normalizeSeverity(sevStr);
+          if (norm.level !== 'unknown') {
+            results[def.key] = { key: def.key, label: def.label, severity: norm.severity, level: norm.level };
+          }
+        }
+      });
+    }
+  }
+
+  function findCategoriesInNextData(obj, results, depth) {
+    if (!obj || typeof obj !== 'object' || (depth || 0) > 8) return;
+    if (Array.isArray(obj)) {
+      for (var i = 0; i < obj.length; i++) {
+        inspectNextDataItem(obj[i], results);
+        findCategoriesInNextData(obj[i], results, (depth || 0) + 1);
+      }
+      return;
+    }
+    inspectNextDataItem(obj, results);
+    for (var k in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, k) && typeof obj[k] === 'object') {
+        findCategoriesInNextData(obj[k], results, (depth || 0) + 1);
+      }
+    }
+  }
+
+  /**
+   * Extract ratings for all 5 Parents Guide categories from DOM, HTML string, or JSON-LD/NextData.
+   */
+  function extractParentsGuideRatings(docOrHtml) {
+    var results = {};
+    CATEGORY_DEFS.forEach(function (def) {
+      results[def.key] = { key: def.key, label: def.label, severity: 'Not Rated', level: 'unknown' };
+    });
+
+    if (!docOrHtml) {
+      return CATEGORY_DEFS.map(function (d) { return results[d.key]; });
+    }
+
+    // Tier 1: __NEXT_DATA__ JSON
+    var nextDataJson = null;
+    if (typeof docOrHtml === 'string') {
+      var match = docOrHtml.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/i);
+      if (match && match[1]) {
+        try { nextDataJson = JSON.parse(match[1]); } catch (e) {}
+      }
+    } else if (docOrHtml.getElementById) {
+      var nextTag = docOrHtml.getElementById('__NEXT_DATA__');
+      if (nextTag && nextTag.textContent) {
+        try { nextDataJson = JSON.parse(nextTag.textContent); } catch (e) {}
+      }
+    }
+
+    if (nextDataJson && nextDataJson.props && nextDataJson.props.pageProps) {
+      findCategoriesInNextData(nextDataJson.props.pageProps, results, 0);
+    }
+
+    // Tier 2: DOM-based target inspection
+    if (typeof docOrHtml !== 'string' && docOrHtml.querySelectorAll) {
+      CATEGORY_DEFS.forEach(function (def) {
+        if (results[def.key].level !== 'unknown') return;
+
+        var el = docOrHtml.querySelector('[data-testid*="' + def.key + '"], [id*="' + def.key + '"], [data-testid*="advisory-' + def.key + '"]');
+        if (el) {
+          var badge = el.querySelector('[class*="content-item"], [class*="list-content"], [class*="badge"], [class*="status"], [class*="rating"], [data-testid*="severity"]');
+          var textToCheck = (badge ? badge.textContent : el.textContent) || '';
+          var norm = normalizeSeverity(textToCheck);
+          if (norm.level !== 'unknown') {
+            results[def.key] = { key: def.key, label: def.label, severity: norm.severity, level: norm.level };
+            return;
+          }
+        }
+
+        var listItems = docOrHtml.querySelectorAll('li[data-testid*="advisory"], li.ipc-metadata-list__item, [data-testid="storyline-advisory"] li');
+        for (var j = 0; j < listItems.length; j++) {
+          var li = listItems[j];
+          var lblEl = li.querySelector('[class*="label"], [class*="title"], dt, strong');
+          var lblText = lblEl ? lblEl.textContent : '';
+          if (def.textMatch.test(lblText) || def.idMatch.test(li.getAttribute('data-testid') || '')) {
+            var valEl = li.querySelector('[class*="content-item"], [class*="value"], [class*="list-content"], dd, span:last-child');
+            var valText = (valEl ? valEl.textContent : li.textContent) || '';
+            var normLi = normalizeSeverity(valText);
+            if (normLi.level !== 'unknown') {
+              results[def.key] = { key: def.key, label: def.label, severity: normLi.severity, level: normLi.level };
+              break;
+            }
+          }
+        }
+      });
+    }
+
+    // Tier 3: Proximity regex scan across text
+    var textSource = '';
+    if (typeof docOrHtml === 'string') {
+      textSource = docOrHtml;
+    } else if (docOrHtml.body && docOrHtml.body.textContent) {
+      textSource = docOrHtml.body.textContent;
+    }
+
+    if (textSource) {
+      CATEGORY_DEFS.forEach(function (def) {
+        if (results[def.key].level !== 'unknown') return;
+        var m = textSource.match(def.scanRe);
+        if (m && m[1]) {
+          var sev = normalizeSeverity(m[1]);
+          if (sev.level !== 'unknown') {
+            results[def.key] = { key: def.key, label: def.label, severity: sev.severity, level: sev.level };
+          }
+        }
+      });
+    }
+
+    return CATEGORY_DEFS.map(function (d) { return results[d.key]; });
+  }
+
   var NS = {};
   NS.isImdbUrl = isImdbUrl;
   NS.extractFromUrl = extractFromUrl;
@@ -482,6 +751,9 @@
   NS.formatId = formatId;
   NS.extractTitleInfoFromDocument = extractTitleInfoFromDocument;
   NS.buildTitleString = buildTitleString;
+  NS.detectParentsGuide = detectParentsGuide;
+  NS.extractParentsGuideRatings = extractParentsGuideRatings;
+  NS.CATEGORY_DEFS = CATEGORY_DEFS;
   NS.ID_REGEX = ID_REGEX;
 
   var target = (typeof globalThis !== 'undefined') ? globalThis : window;

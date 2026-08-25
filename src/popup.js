@@ -7,7 +7,7 @@
 
   var Lib = (typeof IMDBId !== 'undefined') ? IMDBId : null;
 
-  var DEFAULTS = { idFormat: 'tt', titleFormat: 'title-year', historySize: 10 };
+  var DEFAULTS = { idFormat: 'tt', titleFormat: 'title-year', showParentsGuideButton: true, historySize: 10 };
   var settings = Object.assign({}, DEFAULTS);
 
   /* ---------------------------------------------------------------- helpers */

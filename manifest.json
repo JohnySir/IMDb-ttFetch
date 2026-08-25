@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "IMDb ttFetch",
+  "version": "1.1.0",
+  "description": "Fetch and copy IMDb IDs (tt…) and title metadata with one click, a keyboard shortcut, or the context menu.",
+  "permissions": ["storage", "contextMenus", "clipboardWrite", "commands"],
+  "host_permissions": ["https://www.imdb.com/*", "http://www.imdb.com/*"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.imdb.com/*", "http://www.imdb.com/*"],
+      "js": ["src/imdb-id.js", "src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "IMDb ttFetch",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "options_page": "src/options.html",
+  "commands": {
+    "copy-imdb-id": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+C",
+        "mac": "Command+Shift+C"
+      },
+      "description": "Copy IMDb ID of current page"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

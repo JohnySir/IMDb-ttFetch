@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMDb ttFetch</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="popup-root">
+    <header class="hd">
+      <span class="hd-star">★</span>
+      <span class="hd-title">IMDb ttFetch</span>
+    </header>
+
+    <section class="current" id="current-section">
+      <div class="label">Current page</div>
+      <div class="row">
+        <input id="current-id" type="text" readonly value="—" aria-label="Current page IMDb ID">
+        <button id="copy-current" class="btn" title="Copy IMDb ID" aria-label="Copy current page IMDb ID">⧉ Copy</button>
+      </div>
+      <div id="current-title" class="sub">—</div>
+      <div id="current-status" class="status" hidden></div>
+    </section>
+
+    <section class="history-section">
+      <div class="label-row">
+        <span class="label">Recently copied</span>
+        <button id="clear-history" class="link-btn" title="Clear history">Clear</button>
+      </div>
+      <ul id="history-list" class="history-list">
+        <li class="empty">Nothing copied yet.</li>
+      </ul>
+    </section>
+
+    <footer class="ft">
+      <button id="open-options" class="link-btn" title="Open options">⚙ Options</button>
+    </footer>
+  </div>
+  <script src="../src/imdb-id.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

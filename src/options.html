@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMDb ttFetch — Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1><span class="star">★</span> IMDb ttFetch — Options</h1>
+      <p class="tagline">Configure how the extension fetches IMDb IDs and title metadata.</p>
+    </header>
+
+    <section class="card">
+      <h2>ID format</h2>
+      <label class="f-row">
+        <span>Clipboard format</span>
+        <select id="id-format">
+          <option value="tt">tt-prefixed (tt0111161)</option>
+          <option value="digits">Digits only (0111161)</option>
+        </select>
+      </label>
+      <div class="preview">
+        Preview: <code id="format-preview">tt0111161</code>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Title format</h2>
+      <label class="f-row">
+        <span>Title copy format</span>
+        <select id="title-format">
+          <option value="title-year">Title with year (The Shawshank Redemption 1994)</option>
+          <option value="title">Just title (The Shawshank Redemption)</option>
+        </select>
+      </label>
+      <div class="preview">
+        Preview: <code id="title-format-preview">The Shawshank Redemption 1994</code>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Interface</h2>
+      <label class="f-row">
+        <span>Show floating Copy IMDb ID button</span>
+        <input type="checkbox" id="show-floating">
+      </label>
+      <label class="f-row">
+        <span>Show floating Copy Title button</span>
+        <input type="checkbox" id="show-title">
+      </label>
+      <label class="f-row">
+        <span>Enable right-click context menu item</span>
+        <input type="checkbox" id="menu-enabled">
+      </label>
+      <label class="f-row">
+        <span>Toast duration (ms)</span>
+        <input type="number" id="toast-ms" min="500" max="5000" step="100">
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>History</h2>
+      <label class="f-row">
+        <span>Max history entries (0–50)</span>
+        <input type="number" id="history-size" min="0" max="50" step="1">
+      </label>
+    </section>
+
+    <footer>
+      <button id="save" class="btn primary">Save changes</button>
+      <button id="reset" class="btn ghost">Reset to defaults</button>
+      <span id="status" class="status" hidden></span>
+    </footer>
+    <p class="ver">Extension version <span id="version">?</span></p>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -65,7 +65,12 @@
 
   /* ---------------------------------------------------------------- resolve */
 
+  function isTitlePage() {
+    return /\/title\/(tt\d{7,8})\b/i.test(document.location.pathname || document.location.href);
+  }
+
   function resolveId() {
+    if (!isTitlePage()) return null;
     if (Lib && Lib.collectFromDocument) {
       var viaDoc = Lib.collectFromDocument(document);
       if (viaDoc) return viaDoc;
@@ -75,6 +80,7 @@
   }
 
   function resolveTitle() {
+    if (!isTitlePage()) return null;
     if (Lib && Lib.extractTitleInfoFromDocument) {
       return Lib.extractTitleInfoFromDocument(document);
     }
@@ -83,7 +89,7 @@
 
   state.id = resolveId();
   state.titleInfo = resolveTitle();
-  state.parentsGuideAvailable = (Lib && Lib.detectParentsGuide) ? Lib.detectParentsGuide(document) : true;
+  state.parentsGuideAvailable = isTitlePage() && (Lib && Lib.detectParentsGuide) ? Lib.detectParentsGuide(document) : false;
 
   /* ---------------------------------------------------------------- clipboard */
 
@@ -648,6 +654,10 @@
   }
 
   function render() {
+    if (!isTitlePage()) {
+      if (state.ui) removeUI();
+      return;
+    }
     var showId = state.settings.showFloatingButton !== false && !!state.id;
     var showTitle = state.settings.showTitleButton !== false && !!(state.titleInfo && state.titleInfo.title);
     var showParentsGuide = state.settings.showParentsGuideButton !== false && !!state.id;
@@ -745,6 +755,15 @@
   /* ---------------------------------------------------------------- boot */
 
   function updatePageState() {
+    if (!isTitlePage()) {
+      state.id = null;
+      state.titleInfo = null;
+      state.parentsGuideAvailable = false;
+      state.peekOpen = false;
+      state.peekData = null;
+      render();
+      return;
+    }
     state.pageTitle = document.title || '';
     state.id = resolveId();
     state.titleInfo = resolveTitle();

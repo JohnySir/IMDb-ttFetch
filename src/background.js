@@ -83,7 +83,8 @@ function refreshMenu() {
     chrome.contextMenus.create({
       id: MENU_ID,
       title: 'Copy IMDb ID',
-      contexts: ['page', 'selection', 'link']
+      contexts: ['page', 'selection', 'link'],
+      documentUrlPatterns: ['*://*.imdb.com/title/tt*', '*://*.imdb.com/title/tt*/*']
     });
   });
 }

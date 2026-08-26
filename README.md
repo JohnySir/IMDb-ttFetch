@@ -1,7 +1,6 @@
 # IMDb ttFetch — Chrome Extension (Manifest V3)
 
 ![screenshot](assets/screenshot.jpg)
-
 > **Notice:** I created this extension for my own personal use and workflow, but made it open-source for anyone who might find it helpful!
 
 **IMDb ttFetch** is a lightweight, zero-telemetry, privacy-first browser extension designed to instantly fetch and copy IMDb Title IDs (`tt1234567` or `1234567`), extract clean title metadata, and preview or jump to the Parents Guide / Content Advisory with zero friction.

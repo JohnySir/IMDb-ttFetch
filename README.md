@@ -1,6 +1,6 @@
 # IMDb ttFetch — Chrome Extension (Manifest V3)
 
-![screenshot](https://raw.githubusercontent.com/JohnySir/IMDb-ttFetch/refs/heads/main/assets/screenshot.jpg)
+![screenshot](assets/screenshot.jpg)
 
 > **Notice:** I created this extension for my own personal use and workflow, but made it open-source for anyone who might find it helpful!
 
